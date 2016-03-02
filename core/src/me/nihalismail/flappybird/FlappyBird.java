@@ -16,6 +16,7 @@ import java.util.Random;
 
 
 public class FlappyBird extends ApplicationAdapter {
+	//Basic properties
 	SpriteBatch batch;
 	Texture background;
 	Texture topTube;
@@ -23,32 +24,38 @@ public class FlappyBird extends ApplicationAdapter {
 	Circle birdCircle;
 	ShapeRenderer shapeRenderer;
 	Texture stopGame;
+	BitmapFont font;
 
-
+	//Bird properties
 	Texture[] birds;
 	int flapState=0;
 	int birdY;
 
+	//Game properites
 	float velocity=0;
 	boolean gameStatus=false;
 	float gap=400;
-	Random rg=new Random();
 	int count;
 	float maxTubeOffSet;
 	int numberOfTubes=4;
-	float[] tubex=new float[numberOfTubes];
-	float[] tubeOffset=new float[numberOfTubes];
+	float[] tubex=new float[numberOfTubes];//X positions of 4tubes
+	float[] tubeOffset=new float[numberOfTubes];//Offsets of 4 tubes
 	float distanceBetweenTubes;
 	Rectangle[] topTubeRectangles;
 	Rectangle[] bottomTubeRectangles;
+	boolean gameOver;
+
+	//Java properties
+	Random rg=new Random();
+
+	//Scoring logic
 	int score=0;
 	int scoringTube=0;
-	BitmapFont font;
-	boolean gameOver;
 	int highScore;
 
 
 	@Override
+	//Called only once when each time game is created
 	public void create () {
 		batch = new SpriteBatch();
 		background=new Texture("bg.png");
@@ -82,7 +89,9 @@ public class FlappyBird extends ApplicationAdapter {
 	}
 
 	@Override
+	//Refreshes 60fps
 	public void render () {
+		//Start game
 		if(Gdx.input.isTouched() && gameOver==false)
 		{
 			Gdx.app.log("Touched","true");
@@ -90,6 +99,7 @@ public class FlappyBird extends ApplicationAdapter {
 		}
 		if (gameStatus)
 		{
+			//Flap wings of the bird
 			if (flapState==1)
 				flapState=0;
 			else flapState=1;
@@ -98,6 +108,7 @@ public class FlappyBird extends ApplicationAdapter {
 				velocity += 1;
 				birdY -= velocity;
 			}
+			//Upward movement
 			if (Gdx.input.justTouched())
 			{
 				if(velocity<=0)
@@ -105,6 +116,7 @@ public class FlappyBird extends ApplicationAdapter {
 				else
 					velocity-=28;
 			}
+			//Gravity
 			if(birdY>=Gdx.graphics.getHeight()-150) {
 				birdY = Gdx.graphics.getHeight() - 150;
 				velocity += 0.95;
@@ -115,6 +127,7 @@ public class FlappyBird extends ApplicationAdapter {
 		batch.begin();
 		batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		font.draw(batch,String.valueOf(score),Gdx.graphics.getWidth()/2,Gdx.graphics.getHeight()-200);
+		//Score increases when pipe crosses half screen
 		if(gameStatus) {
 			if (tubex[scoringTube]<Gdx.graphics.getWidth()/2)
 			{
@@ -128,13 +141,15 @@ public class FlappyBird extends ApplicationAdapter {
 					scoringTube=0;
 				}
 			}
+			//Tube logic
 			for (int i = 0; i < numberOfTubes; i++) {
 				if(tubex[i]< -topTube.getWidth()) {
-						tubex[i]+=numberOfTubes*distanceBetweenTubes;
-						tubeOffset[i]=(rg.nextFloat()-0.5f)*(Gdx.graphics.getHeight()-gap-200);
+					tubex[i]+=numberOfTubes*distanceBetweenTubes;
+					tubeOffset[i]=(rg.nextFloat()-0.5f)*(Gdx.graphics.getHeight()-gap-200);
 				}
 				else {
 					tubex[i] -= 7;
+					//Position defined for bottom left of each sprite
 					batch.draw(topTube, tubex[i], Gdx.graphics.getHeight() / 2 + gap / 2 + tubeOffset[i]);
 					batch.draw(bottomTube, tubex[i], Gdx.graphics.getHeight() / 2 - gap / 2 - bottomTube.getHeight() + tubeOffset[i]);
 					topTubeRectangles[i]=new Rectangle(tubex[i],Gdx.graphics.getHeight() / 2 + gap / 2 + tubeOffset[i],topTube.getWidth(),topTube.getHeight());
@@ -143,12 +158,19 @@ public class FlappyBird extends ApplicationAdapter {
 				};
 			}
 		}
+
+		//Draw bird
 		batch.draw(birds[flapState], Gdx.graphics.getWidth() / 2 - birds[flapState].getWidth() / 2, birdY);
 		batch.end();
 
+
+		//Casting sprites as images for programming,Uncomment shaperenderer for shapes
 		birdCircle.set(Gdx.graphics.getWidth() / 2, birdY + birds[0].getHeight() / 2, birds[0].getWidth() / 2);
+
 		/*shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 		shapeRenderer.setColor(Color.RED);*/
+
+		//Game over check
 		for (int i=0;i<numberOfTubes;i++) {
 			/*shapeRenderer.rect(tubex[i],Gdx.graphics.getHeight() / 2 + gap / 2 + tubeOffset[i],topTube.getWidth(),topTube.getHeight());
 			shapeRenderer.rect(tubex[i], Gdx.graphics.getHeight() / 2 - gap / 2 - bottomTube.getHeight() + tubeOffset[i],bottomTube.getWidth(),bottomTube.getHeight());*/
@@ -164,15 +186,21 @@ public class FlappyBird extends ApplicationAdapter {
 			batch.begin();
 			batch.draw(stopGame, Gdx.graphics.getWidth() / 2 - stopGame.getWidth() / 2, Gdx.graphics.getHeight() / 2 - stopGame.getHeight() / 2);
 			batch.end();
+
+			//Update gigh score
 			if(score>highScore) {
 				highScore = score;
 				batch.begin();
 				font.draw(batch,"High score:"+String.valueOf(highScore),100,Gdx.graphics.getHeight()-400);
 				batch.end();
 			}
+
+			//Batches need to begin and end to draw textures
 			batch.begin();
 			font.draw(batch,"High score:"+String.valueOf(highScore),100,Gdx.graphics.getHeight()-400);
 			batch.end();
+
+			//Restart game
 			if (Gdx.input.isTouched())
 			{
 				gameOver=false;
